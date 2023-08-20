@@ -1,0 +1,169 @@
+---
+title: "Lab: VAR"
+author: "魏上傑"
+date: "2023-05-28"
+
+output:
+  pdf_document:
+    latex_engine: xelatex
+    toc: true
+    number_sections: true
+header-includes:
+  - \renewcommand{\contentsname}{目錄}
+  - \usepackage{amsmath}
+
+
+    
+
+
+mainfont: "Times New Roman"  # 指定英文字型
+fontsize: "12pt"
+papersize: "a4"
+geometry: "margin=1.5cm"
+lang: "zh-tw"
+documentclass: ctexart
+
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# VAR Slides
+
+\begin{align}
+E[\epsilon_t]=E\begin{bmatrix}\epsilon_{1t} \\ \epsilon_{2t}\\ \vdots\\ \epsilon_{kt} \end{bmatrix}=\begin{bmatrix}E\epsilon_{1t} \\ E\epsilon_{2t}\\ \vdots\\ E\epsilon_{kt} \end{bmatrix}=\begin{bmatrix}0 \\ 0\\ \vdots\\ 0 \end{bmatrix}
+\end{align}
+
+
+\begin{align}
+\Sigma_{\epsilon}=Var(\epsilon_t)=E[(\epsilon_t-E[\epsilon_t])(\epsilon_t-E[\epsilon_t])']=E[\epsilon_t\epsilon_t']\\=\begin{bmatrix} Var(\epsilon_{1t})  & Cov(\epsilon_{1t}, \epsilon_{2t}) & \dots & Cov(\epsilon_{1t}, \epsilon_{kt}) \\ & Var(\epsilon_{2t}) & \dots & & \\ \vdots & & \ddots & \\ Cov(\epsilon_{kt}, \epsilon_{1t}) & & & Var({\epsilon_{kt}})
+\end{bmatrix}
+\end{align}
+
+$Cov(\epsilon_{it}, \epsilon_{jt})\ne 0$
+
+
+\begin{align}
+y_t&=\beta_1y_{t-1}+\epsilon_t, \quad\epsilon_t\sim i.i.d. (0, \sigma^2)\\
+y_{t+1}&=\beta_1y_t+\epsilon_{t+1}\\
+E_ty_{t+1}&=\beta_1E_ty_t+E_t\epsilon_{t+1}=\beta_1y_t
+\end{align}
+
+Notice that $E_t\epsilon_{t+1}\underbrace{=}_{{indep}}E(\epsilon_{t+1})=0$
+
+
+# Some Derivations
+
+Consider AR(p):
+
+\begin{align}
+y_t=\beta_1y_{t-1}+...+\beta_py_{t-p}+\epsilon_t, y_t\in \mathcal R
+\end{align}
+
+In particular AR(1)
+
+\begin{align}
+y_t=\beta_1y_{t-1}+\epsilon_t, y_t\in \mathcal R
+\end{align}
+
+Consider VAR(p):
+
+\begin{align}
+y_t=\Phi_1y_{t-1}+...+\Phi_py_{t-p}+\epsilon_t, y_t\in \mathcal R^k
+\end{align}
+
+\begin{align}
+y_t=\begin{bmatrix}y_{1t}\\y_{2t}\\ \vdots \\y_{kt} \end{bmatrix}
+\end{align}
+
+\begin{align}
+\Phi_j=\begin{bmatrix}\Phi^{11}_{j}&\Phi^{12}_{j}&\dots &\Phi^{1k}_{j}\\\Phi^{21}_{j}&\Phi^{22}_{j}&\dots & \Phi^{2k}_{j}\\ \vdots \\\Phi^{k1}_{j}& \Phi^{k2}_{j}&\dots & \Phi^{kk}_{j} \end{bmatrix}
+\end{align}
+
+\begin{align}
+\epsilon_t=\begin{bmatrix}\epsilon_{1t}\\\epsilon_{2t}\\ \vdots \\\epsilon_{kt} \end{bmatrix}
+\end{align}
+
+where $y_{jt}\in\mathcal R, \Phi_j^{mn}\in \mathcal R, \epsilon_{jt}\in \mathcal R$
+
+Particularly, consider Bivariate VAR(1)
+
+\begin{align}
+y_t=\begin{bmatrix}q_{t} \\m_{t} \end{bmatrix}, y_t\in \mathcal R^2
+\end{align}
+
+\begin{align}
+\underbrace{\begin{bmatrix}q_{t} \\m_{t} \end{bmatrix}}_{y_t}=\underbrace{\begin{bmatrix}\Phi_1^{11}& \Phi_1^{12}\\\Phi_1^{21}&\Phi_1^{22}\end{bmatrix}}_{\Phi_1}\underbrace{\begin{bmatrix}q_{t-1}\\m_{t-1}\end{bmatrix}}_{y_{t-1}}+\underbrace{\begin{bmatrix}\epsilon_{qt}\\\epsilon_{mt}\end{bmatrix}}_{\epsilon_t}
+\end{align}
+
+Write out the matrix, we have
+
+$$\begin{cases}
+q_t=\Phi_1^{11}q_{t-1}+\Phi_1^{12}m_{t-1}+\epsilon_{qt}\notag\\
+m_t=\Phi_1^{21}q_{t-1}+\Phi_1^{22}m_{t-1}+\epsilon_{mt}\notag
+\end{cases}$$
+
+$\frac{\partial q_{t+s}}{\partial \epsilon_{qt}}=?\quad\frac{\partial m_{t+s}}{\partial \epsilon_{mt}}=?\quad \frac{\partial q_{t+s}}{\partial \epsilon_{mt}}=?\quad \frac{\partial m_{t+s}}{\partial \epsilon_{qt}}=?$
+
+
+Back to VAR(1),
+
+\begin{align*}
+y_t&=\Phi_1y_{t-1}+\epsilon_t, y_t\in \mathcal R^k\\
+&=\Phi_1[\Phi_1y_{t-2}+\epsilon_{t-1}]+\epsilon_t\\
+&=\epsilon_t+\Phi_1\epsilon_{t-1}+\Phi_1^2y_{t-2}\\
+&=\epsilon_t+\Phi_1\epsilon_{t-1}+\Phi_1^2\epsilon_{t-2}+\dots+\Phi_1^s\epsilon_{t-s}+\Phi_1^{s+1}y_{t-s-1}
+\end{align*}
+
+\begin{align*}
+y_{t+s}=\epsilon_{t+s}+\Phi_1\epsilon_{t+s-1}+\Phi_1^2\epsilon_{t+s-2}+\dots+\Phi_1^s\epsilon_t+\Phi_1^{s+1}y_{t-1}
+\end{align*}
+
+
+\begin{align}
+\frac{\partial y_{1t+s}}{\partial \epsilon_{2t}}=\begin{bmatrix}\underbrace{1}_{1st} & 0 & \dots & 0\end{bmatrix}\Phi_1^s\begin{bmatrix}0 \\ \underbrace{1}_{2nd}\\ 0\\\vdots \\0\end{bmatrix}
+\end{align}
+
+In general, 
+
+\begin{align}
+\frac{\partial y_{jt+s}}{\partial \epsilon_{it}}=\begin{bmatrix}0 & \dots & 0 & \underbrace{1}_{jth} & 0 &\dots & 0\end{bmatrix}\Phi_1^s\begin{bmatrix}0 \\\vdots \\0\\\underbrace{1}_{ith}\\0\\\vdots\\ 0\end{bmatrix}
+\end{align}
+
+
+Back to example, 
+
+
+\begin{align}
+\underbrace{\begin{bmatrix}q_{t} \\m_{t} \end{bmatrix}}_{y_t}=\underbrace{\begin{bmatrix}\Phi_1^{11}& \Phi_1^{12}\\\Phi_1^{21}&\Phi_1^{22}\end{bmatrix}}_{\Phi_1}\underbrace{\begin{bmatrix}q_{t-1}\\m_{t-1}\end{bmatrix}}_{y_{t-1}}+\underbrace{\begin{bmatrix}\epsilon_{qt}\\\epsilon_{mt}\end{bmatrix}}_{\epsilon_t}
+\end{align}
+
+$\frac{\partial q_{t+s}}{\partial \epsilon_{mt}}=\begin{bmatrix}1 & 0\end{bmatrix}\Phi_1^s\begin{bmatrix}0\\1\end{bmatrix}, \quad \frac{\partial m_{t+s}}{\partial \epsilon_{qt}}=\begin{bmatrix}0 & 1\end{bmatrix}\Phi_1^s\begin{bmatrix}1\\0\end{bmatrix}$
+
+However, there exists a problem (correlation !!!).
+
+\begin{align}
+\epsilon_t\sim (\begin{bmatrix}0\\0\end{bmatrix},\Sigma_\epsilon)
+\end{align}
+
+Notice $E(\epsilon_{qt})=E(\epsilon_{mt})=0$
+
+\begin{align}
+\Sigma_\epsilon&=E(\epsilon_t\epsilon_t')\\
+&=E[\begin{bmatrix}\epsilon_{qt}\\\epsilon_{mt}\end{bmatrix}\begin{bmatrix}\epsilon_{qt}&\epsilon_{mt}\end{bmatrix}]\\
+&=E\begin{bmatrix}\epsilon_{qt}\epsilon_{qt}& \epsilon_{qt}\epsilon_{mt}\\\epsilon_{mt}\epsilon_{qt}& \epsilon_{mt}\epsilon_{mt}\end{bmatrix}\\
+&=\begin{bmatrix}E(\epsilon_{qt}^2)& E(\epsilon_{qt}\epsilon_{mt})\\E(\epsilon_{mt}\epsilon_{qt})& E(\epsilon_{mt}^2)\end{bmatrix}\\
+&=\begin{bmatrix}Var(\epsilon_{qt})& Cov(\epsilon_{qt},\epsilon_{mt})\\Cov(\epsilon_{mt},\epsilon_{qt})& Var(\epsilon_{mt})\end{bmatrix}
+\end{align}
+
+Notice that $Cov(\epsilon_{qt},\epsilon_{mt})=Cov(\epsilon_{mt},\epsilon_{qt})\ne 0$. Hence $\frac{\partial q_{t+s}}{\partial \epsilon_{mt}}$ becomes meaningless as the condition "other things being equal" fails.
+
+Therefore, our goal is
+
+\begin{align*}
+\underbrace{Cov(\epsilon_{qt}, \epsilon_{mt})\ne 0}_{(reduced-form) VAR} \rightarrow \underbrace{Cov(e_{qt}, e_{mt})=0}_{SVAR}
+\end{align*}
+
+where $e_t$ is structural shock. In such cases, $\frac{\partial q_{t+s}}{\partial e_{mt}}$ possesses economic meanings.

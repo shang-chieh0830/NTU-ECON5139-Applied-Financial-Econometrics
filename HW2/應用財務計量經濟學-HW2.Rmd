@@ -1,0 +1,480 @@
+---
+title: "應用財務計量經濟學- HW2"
+author: "魏上傑"
+date: "R11323008"
+output:
+  pdf_document:
+    latex_engine: xelatex
+    toc: true
+    number_sections: true
+header-includes:
+  - \renewcommand{\contentsname}{目錄}
+  - \usepackage{amsmath}
+    
+mainfont: Times New Roman
+fontsize: 12pt
+papersize: a4
+geometry: margin=1.5cm
+lang: "zh-tw"
+documentclass: ctexart
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercise 5.2
+
+Consider AR model:
+
+\begin{align}
+Y_t=a_0+a_2Y_{t-2}+\epsilon_t
+\end{align}
+
+with $|a_2|<1, \epsilon_t\sim i.i.d(0,\sigma^2)$
+
+令$\Omega_t$ 為第t期的資訊集合,i.e., $\Omega_t=\{Y_t, Y_{t-1}...\}$
+
+假設 $E_t(\epsilon_{t+1})=E(\epsilon_{t+1}|\Omega_t)=E(\epsilon_{t+1}|X_{1t},X_{2t},...,X_{kt},X_{1t-1},X_{2t-1},...)=0$
+
+(a) $E_{t-2}(Y_t)$
+
+\begin{align}
+E_{t-2}(Y_t)&=E(Y_t|\Omega_{t-2})\\
+&= E(Y_t|Y_{t-2},Y_{t-3},...)\\
+&= E(a_0+a_2Y_{t-2}+\epsilon_t|Y_{t-2},Y_{t-3},...)\\
+&= a_0+a_2Y_{t-2}+ E(\epsilon_t|Y_{t-2},Y_{t-3},...)
+\end{align}
+
+(b) $E_{t-1}(Y_t)$
+
+\begin{align}
+E_{t-1}(Y_t)&=E(Y_t|\Omega_{t-1})\\
+&= E(Y_t|Y_{t-1},Y_{t-2},...)\\
+&= E(a_0+a_2Y_{t-2}+\epsilon_t|Y_{t-1},Y_{t-2},...)\\
+&= a_0+a_2Y_{t-2}+ E(\epsilon_t|Y_{t-1},Y_{t-2},...)\\
+&= a_0+a_2Y_{t-2}
+\end{align}
+
+$E_{t-1}(Y_t)$ 與 $E_{t-2}(Y_t)$ 的差異在於是否用了所有可用的歷史資料，$E_{t-2}(Y_t)$並未使用t-1期的歷史資料，造成條件期望值的差異。
+
+(c) $E_t(Y_{t+2})$
+
+\begin{align}
+E_{t}(Y_{t+2})&=E(Y_{t+2}|\Omega_{t})\\
+&= E(Y_{t+2}|Y_{t},Y_{t-1},...)\\
+&= E(a_0+a_2Y_{t}+\epsilon_{t+2}|Y_{t},Y_{t-1},...)\\
+&= a_0+a_2Y_{t}+ E(\epsilon_{t+2}|Y_{t},Y_{t-1},...)\\
+&= a_0+a_2Y_{t}+ E(\epsilon_{t+2}|Y_{t},Y_{t-1},...)
+\end{align}
+
+(d) $Cov(Y_t,Y_{t-1})$
+
+\begin{align}
+Cov(Y_t, Y_{t-1})=Cov(a_0+a_2Y_{t-2}+\epsilon_t, a_0+a_2Y_{t-3}+\epsilon_{t-1})=0
+\end{align}
+
+(e) $Cov(Y_t,Y_{t-2})$
+
+\begin{align}
+Cov(Y_t, Y_{t-2})=Cov(a_0+a_2Y_{t-2}+\epsilon_t, a_0+a_2Y_{t-4}+\epsilon_{t-2})=0
+\end{align}
+
+(f) $\frac{\partial Y_{t+j}}{\partial \epsilon_t}, j=0,1...,6$
+
+\begin{align}
+Y_t&=a_0+a_2Y_{t-2}+\epsilon_t\\
+&=a_0+a_2[a_0+a_2Y_{t-4}+\epsilon_{t-2}]+\epsilon_t\\
+&=a_0+a_2a_0+a_2^2[a_0+a_2Y_{t-6}+\epsilon_{t-4}]+a_2\epsilon_{t-2}+\epsilon_t\\
+&=a_0+a_2a_0+a_2^2a_0+a_2^3[a_0+a_2Y_{t-8}+\epsilon_{t-6}]+a_2^2\epsilon_{t-4}+a_2\epsilon_{t-2}+\epsilon_t
+\end{align}
+
+
+$$\frac{\partial Y_{t+j}}{\partial \epsilon_t}=
+\begin{cases} 
+\frac{\partial Y_t}{\partial \epsilon_t}=1 & \text{, if } j=0\\
+\frac{\partial Y_{t+1}}{\partial \epsilon_t}=0 & \text{, if } j=1\\
+\frac{\partial Y_{t+2}}{\partial \epsilon_t}=a_2 & \text{, if } j=2\\
+\frac{\partial Y_{t+3}}{\partial \epsilon_t}=0 & \text{, if } j=3\\
+\frac{\partial Y_{t+4}}{\partial \epsilon_t}=a_2^2 & \text{, if } j=4\\
+\frac{\partial Y_{t+5}}{\partial \epsilon_t}=0 & \text{, if } j=5\\
+\frac{\partial Y_{t+6}}{\partial \epsilon_t}=a_2^3 & \text{, if } j=6\\
+\end{cases}$$
+
+# Exercise 5.4
+
+在主計處下載台灣以固定價格計算的民間消費資料(1961Q1-2006Q4)，命名為`ctw`。將`ctw`取對數後命名為`lctw`。將`lctw`取一階差分後，命名為`dlctw`
+
+(a) 設定1961Q1-2003Q4為樣本內期間，2004Q1-2006Q4為樣本外期間。
+
+```{r}
+# 資料取自國民消費季資料
+# 民間消費季資料只從1981Q1開始
+
+library(readxl)
+consumption <- read_excel("consume.xlsx", skip = 4)
+colnames(consumption) <- c("Date", "ctw")
+consumption$ctw <- consumption$ctw*(10^6) # 轉為單位新台幣
+
+consumption$lctw <- log(consumption$ctw)
+dlctw <- diff(consumption$lctw, lag=1, differences=1)
+trn.df <- data.frame(dlctw[1:171]) # in-sample
+tst.df <- data.frame(dlctw[-(1:171)]) # out-of-sample
+
+colnames(trn.df) <- c("dlctw")
+colnames(tst.df) <- c("dlctw")
+```
+
+
+(b) 以AR(1)模型估計`dlctw`，執行樣本外預測，並計算 $\widehat{\text{RMSE}}$, 命名為$\text{RMSE}_1$
+
+
+```{r}
+regr <- ar.ols(trn.df$dlctw, order=1, demean = FALSE, intercept = TRUE)
+regr
+regr$asy.se.coef # std.errors of the estimates
+
+```
+
+Let $v_t=$ `dlctw`, then the estimated AR(1) model is
+
+\begin{align}
+v_t &= \phi_0+\phi_1v_{t-1}+\epsilon_t\\
+\hat v_t&=\hat \phi_0+\hat \phi_1v_{t-1}\\
+\hat v_t&=0.02484_{(0.003817)}-0.322_{(0.071967)}v_{t-1}
+\end{align}
+
+with $\hat \sigma^2_{\epsilon}=0.002176$
+
+```{r}
+fore <- predict(regr, n.ahead=12)
+
+low <- fore$pred - qnorm(p = 0.975, mean = 0, sd = 
+         1)*fore$se
+
+up <- fore$pred + qnorm(p = 0.975, mean = 0, sd = 
+         1)*fore$se
+
+plot(x = trn.df$dlctw, ylab = expression(dlctw), xlab = "t", type =
+       "o", col = "red", lwd = 1, pch = 20, main = NULL, 
+    panel.first = grid(col = "gray", lty = "dotted"), xlim 
+    = c(170, 183))
+
+
+lines(x = c(trn.df$dlctw - regr$resid, fore$pred), lwd 
+    = 1, col = "black", type = "o", pch = 17) 
+
+lines(y = low, x = 172:183, lwd = 1, col = "darkgreen", 
+    lty = "dashed") 
+
+lines(y = up, x = 172:183, lwd = 1, col = "darkgreen", 
+    lty = "dashed") 
+
+legend("bottomleft", legend = c("Observed", "Forecast", 
+    "95% C.I."), lty = c("solid", "solid", "dashed"), col 
+    = c("red", "black", "darkgreen"), pch = c(20, 17, 
+    NA), bty = "n")
+```
+
+```{r}
+# calculate RMSE
+error1 <- (tst.df$dlctw-fore$pred)^2
+MSE1 <- mean(error1)
+RMSE1 <- sqrt(MSE1)
+RMSE1
+```
+
+
+
+```{r}
+# one can also use arima() to fit AR model
+# the estimated result is very close to ar.ols
+mod.fit <- arima(x=trn.df$dlctw, order=c(1, 0, 0))
+mod.fit
+fore.mod <- predict(mod.fit, n.ahead=12, se.fit=TRUE)
+fore.mod$pred
+
+# the intercept in arima() result is actually the estimated mean of the series
+# hence, need to convert to intercept
+0.0185*(1-(-0.3256))
+```
+
+
+(c) 以AR(3)模型估計`dlctw`，執行樣本外預測，並計算 $\widehat{\text{RMSE}}$, 命名為$\text{RMSE}_3$
+
+
+```{r}
+regr <- ar.ols(trn.df$dlctw, order=3, demean = FALSE, intercept = TRUE)
+regr
+regr$asy.se.coef # std.errors of the estimates
+```
+
+Let $v_t=$ `dlctw`, then the estimated AR(3) model is
+
+\begin{align}
+v_t &= \phi_0+\phi_1v_{t-1}+\phi_2v_{t-2}+\phi_3v_{t-3}+\epsilon_t\\
+\hat v_t&=\hat \phi_0+\hat \phi_1v_{t-1}+\hat \phi_2v_{t-2}+\hat \phi_3v_{t-3}\\
+\hat v_t&=0.0613_{(0.003)}-0.7771_{(0.0500)}v_{t-1}-0.7491_{(0.0513)}-0.7531_{(0.0497)}
+\end{align}
+
+with $\hat \sigma^2_{\epsilon}=0.0007581$
+
+```{r}
+fore <- predict(regr, n.ahead=12)
+
+low <- fore$pred - qnorm(p = 0.975, mean = 0, sd = 
+         1)*fore$se
+
+up <- fore$pred + qnorm(p = 0.975, mean = 0, sd = 
+         1)*fore$se
+
+plot(x = trn.df$dlctw, ylab = expression(dlctw), xlab = "t", type = 
+    "o", col = "red", lwd = 1, pch = 20, main = NULL, 
+    panel.first = grid(col = "gray", lty = "dotted"), xlim 
+    = c(170, 183))
+
+lines(x = c(trn.df$dlctw - regr$resid, fore$pred), lwd 
+    = 1, col = "black", type = "o", pch = 17) 
+
+lines(y = low, x = 172:183, lwd = 1, col = "darkgreen", 
+    lty = "dashed") 
+lines(y = up, x = 172:183, lwd = 1, col = "darkgreen", 
+    lty = "dashed") 
+
+legend("bottomleft", legend = c("Observed", "Forecast", 
+    "95% C.I."), lty = c("solid", "solid", "dashed"), col 
+    = c("red", "black", "darkgreen"), pch = c(20, 17, 
+    NA), bty = "n")
+```
+
+```{r}
+# calculate RMSE
+error3 <- (tst.df$dlctw-fore$pred)^2
+MSE3 <- mean(error3)
+RMSE3 <- sqrt(MSE3)
+RMSE3
+```
+
+(d) 比較$\text{RMSE}_1$與$\text{RMSE}_3$，哪個模型樣本外預測較佳
+
+
+```{r}
+RMSE1
+RMSE3
+RMSE3<RMSE1
+```
+
+AR(3) model has a better out-of-sample forecast performance.
+
+(e) 計算AR(1)與AR(3)模型之間的DM統計量。
+
+\begin{align}
+H_0&: \text{MSE}^{\text{AR(1)}}=\text{MSE}^{\text{AR(3)}} \notag\\
+H_1&: \text{MSE}^{\text{AR(3)}}<\text{MSE}^{\text{AR(1)}} \notag
+\end{align}
+
+
+```{r}
+library(sandwich)
+library(lmtest)
+
+d <- error1-error3
+N <- length(d)
+m <- floor(0.75 * N^(1/3))
+d_df <- data.frame(d)
+regr_DM <- lm(d~1, data = d_df)
+coeftest(regr_DM, vcov=NeweyWest(regr_DM, prewhite = F, adjust=T, lag=m-1))
+```
+
+The DM statistics is $\frac{0.00022992}{0.00014790}=1.5546$
+
+# Exercise 6.4
+
+Consider GDP growth $\Delta Y_t$ as an AR(1) model:
+
+\begin{align}
+\Delta Y_t=c+\phi\Delta Y_{t-1}+\epsilon_t
+\end{align}
+
+where $Y_t=log(GDP_t)$ and $\epsilon_t\sim WN(0, \sigma^2)$ 
+
+(a) $Y_t$ 為何種自我回歸序列
+
+\begin{align}
+Y_t-Y_{t-1} &=c+\phi(Y_{t-1}-Y_{t-2})+\epsilon_t\\
+\implies Y_t &=c+(1+\phi)Y_{t-1}-\phi Y_{t-2}+\epsilon_t
+\end{align}
+
+$Y_t$ 為AR(2)序列
+
+(b) $Y_t$ 是否定態
+
+否。
+
+We have $[1-(1+\phi)L+\phi L^2]Y_t=c+\epsilon_t$
+
+i.e., $\beta(z)=1-(1+\phi)z+\phi z^2$
+
+Notice that $\beta(1)=0$ i.e., $Y_t$ has unit root.
+
+
+
+(c) $\frac{\partial \Delta Y_{t+j}}{\partial \epsilon_t}$
+
+Let $v_t=\Delta Y_t$, then $v_t=c+\phi v_{t-1}+\epsilon_t$
+
+\begin{align}
+v_t &= c+\phi v_{t-1}+\epsilon_t\\
+&= c+\phi [c+\phi v_{t-2}+\epsilon_{t-1}]+\epsilon_t\\
+&=\dots\\
+\implies &\frac{\partial v_{t+j}}{\partial \epsilon_t}=\frac{\partial \Delta Y_{t+j}}{\partial \epsilon_t}=\phi^j
+\end{align}
+
+
+(d) $\lim_{j\to \infty}\frac{\partial E_t\Delta Y_{t+j}}{\partial \epsilon_t}$
+
+\begin{align}
+E_t(v_{t+j})&=E(v_{t+j}|\Omega_{t})=E(v_{t+j}|v_t,v_{t-1},...)\\
+&=E(c+\phi v_{t+j-1}+\epsilon_{t+j}|v_t,v_{t-1},...)\\&=c+\phi E(v_{t+j-1}|v_t,v_{t-1},...)+E(\epsilon_{t+j}|v_t,v_{t-1},...)\\
+&=\dots\notag
+\end{align}
+
+In particular, 
+
+\begin{align}
+E_t(v_{t+1})&=E(v_{t+1}|\Omega_{t})=E(v_{t+1}|v_t,v_{t-1},...)\\
+&=E(c+\phi v_{t}+\epsilon_{t+1}|v_t,v_{t-1},...)\\&=c+\phi E(v_{t}|v_t,v_{t-1},...)+E(\epsilon_{t+1}|v_t,v_{t-1},...)\\
+&=c+\phi v_t+E(\epsilon_{t+1}|v_t,v_{t-1},...)\\
+&=c+\phi (c+\phi v_{t-1}+\epsilon_t)+E(\epsilon_{t+1}|v_t,v_{t-1},...)\\
+\implies &\frac{\partial E_tv_{t+1}}{\partial \epsilon_t}=\phi
+\end{align}
+
+Assume that $\phi>0$
+
+\begin{align}
+\lim_{j\to \infty}\frac{\partial E_t\Delta Y_{t+j}}{\partial \epsilon_t}=\lim_{j\to \infty}\phi^j=\begin{cases}0 & \text{ if } |\phi|<1\\ \infty & \text{ if } |\phi|\ge 1\end{cases}\notag
+\end{align}
+
+
+(e) $\frac{\partial Y_{t+j}}{\partial \epsilon_t}$
+
+Let $\beta_1=(1+\phi), \beta_2=-\phi$
+
+Then $Y_t=c+\beta_1Y_{t-1}+\beta_2Y_{t-2}+\epsilon_t$
+
+\begin{align}
+\frac{\partial Y_t}{\partial \epsilon_t}&=1\\
+\frac{\partial Y_t}{\partial \epsilon_{t-1}}&=\beta_1\\
+\frac{\partial Y_t}{\partial \epsilon_{t-2}}&=\beta_1\frac{\partial Y_t}{\partial \epsilon_{t-1}}+\beta_2\frac{\partial Y_t}{\partial \epsilon_t}=\beta_1^2+\beta_2\\
+\frac{\partial Y_t}{\partial \epsilon_{t-3}}&=\beta_1\frac{\partial Y_t}{\partial \epsilon_{t-2}}+\beta_2\frac{\partial Y_t}{\partial \epsilon_{t-1}}=\beta_1(\beta_1^2+\beta_2)+\beta_2(\beta_1)=\beta_1^3+2\beta_1\beta_2\\
+\vdots \notag\\
+\frac{\partial Y_t}{\partial \epsilon_{t-j}}&=\beta_1\frac{\partial Y_t}{\partial \epsilon_{t-j+1}}+\beta_2\frac{\partial Y_t}{\partial \epsilon_{t-j+2}}\\
+\implies \frac{\partial Y_t}{\partial \epsilon_{t-j}}&=\frac{\partial Y_{t+j}}{\partial \epsilon_t}=\beta_1\frac{\partial Y_{t+j-1}}{\partial \epsilon_t}+\beta_2\frac{\partial Y_{t+j-2}}{\partial \epsilon_t}
+\end{align}
+
+Write in first-order form:
+
+\begin{align}
+\begin{bmatrix} Y_t \\ Y_{t-1} \\ Y_{t-2}  \end{bmatrix}=\begin{bmatrix} c & \beta_1 & \beta_2 \\ 0 & 1 & 0 \\ 0 & 0 &  1 \end{bmatrix} \begin{bmatrix} 1 \\ Y_{t-1} \\ Y_{t-2} \end{bmatrix} + \begin{bmatrix} \epsilon_t \\ 0 \\  0 \end{bmatrix}
+\end{align}
+
+Let $\mathbf{Y}_t=(Y_t, Y_{t-1}, Y_{t-2})', \varepsilon_t=(\epsilon_t,0,0)'$ and $\Phi$ be the corresponding 3x3 matrix, then we have $\mathbf{Y}_t=\Phi\mathbf{Y}_{t-1}+\varepsilon_t$
+
+Notice by the derivation in textbook, we get
+
+\begin{align}
+\frac{\partial Y_{t+j}}{\partial \epsilon_t}=\begin{bmatrix} 1 & 0& \dots & 0  \end{bmatrix}\Phi^j\begin{bmatrix} 1 \\ 0 \\ \vdots \\ 0 \end{bmatrix}
+\end{align}
+
+
+(f) $\lim_{j\to \infty}\frac{\partial E_tY_{t+j}}{\partial \epsilon_t}$
+
+\begin{align}
+\lim_{j\to \infty}\frac{\partial E_tY_{t+j}}{\partial \epsilon_t}=\begin{bmatrix} 1 & 0& \dots & 0  \end{bmatrix}\lim_{j\to \infty}\Phi^j\begin{bmatrix} 1 \\ 0 \\ \vdots \\ 0 \end{bmatrix}
+\end{align}
+
+\begin{align}
+\lim_{j\to \infty}\frac{\partial E_t Y_{t+j}}{\partial \epsilon_{t}}=\lim_{j\to \infty}\beta_1\frac{\partial E_t Y_{t+j-1}}{\partial \epsilon_t}+\lim_{j\to \infty}\beta_2\frac{\partial E_t Y_{t+j-2}}{\partial \epsilon_t}
+\end{align}
+
+# Exercise 6.6
+
+至FRED下載日本CPI (code: JPNCPIALLQINMEI) 與美國實質GDP (code: GDPC1)。將日本CPI取對數，命名為`lcpi_jp`，將美國實質GDP取對數後，命名為`lrgdp_us`，樣本期間為1972Q1-2020Q4。
+
+```{r}
+library(quantmod)
+getSymbols("JPNCPIALLQINMEI", src="FRED")
+getSymbols("GDPC1", src="FRED")
+
+JPNCPIALLQINMEI <- JPNCPIALLQINMEI["1972-01-01/2020-10-01"]
+GDPC1 <- GDPC1["1972-01-01/2020-10-01"]
+
+lcpi_jp <- log(JPNCPIALLQINMEI)
+lrgdp_us <- log(GDPC1)
+
+df <- data.frame(lcpi_jp, lrgdp_us)
+colnames(df) <- c("lcpi_jp", "lrgdp_us")
+```
+
+(a) 對`lcpi_jp`與`lrgdp_us`以ADF, PP, KPSS, DF-GLS, ERS 以及NP檢定，落後期數以修正AIC決定。
+
+It seems that R does not have a package that allows us to choose lags based on modified AIC. Also, no package for conducting NP test. We attach the test results conducted in EViews at the end. Below is some implementations using R.
+
+
+```{r}
+library(urca)
+summary(ur.df(lcpi_jp, type=c("drift"), lags=4))
+summary(ur.pp(lcpi_jp, type = c("Z-alpha", "Z-tau"), model=c("constant"), use.lag=7))
+summary(ur.kpss(lcpi_jp, type=c("mu"), use.lag = 11)) # type="mu": with a drift
+summary(ur.ers(lcpi_jp, type=c("DF-GLS"), model = c("constant"), lag.max=12))
+summary(ur.ers(lcpi_jp, type=c("P-test"), model = c("constant"), lag.max=4))
+
+
+```
+
+```{r}
+summary(ur.df(lrgdp_us, type=c("drift"), lags=0))
+summary(ur.pp(lrgdp_us, type = c("Z-alpha", "Z-tau"), model=c("constant"), use.lag=3))
+summary(ur.kpss(lrgdp_us, type=c("mu"), use.lag = 11)) # type="mu": with a drift
+summary(ur.ers(lrgdp_us, type=c("DF-GLS"), model = c("constant"), lag.max=11))
+summary(ur.ers(lrgdp_us, type=c("P-test"), model = c("constant"), lag.max=0))
+
+```
+
+
+(b) 估計以下迴歸式
+
+\begin{align}
+\text{lrgdp\_us}_t = \alpha + \beta\text{lcpi\_jp}_t + e_t
+\end{align}
+
+報告並解釋結果。
+
+```{r}
+regr <- lm(lrgdp_us~lcpi_jp, data=df)
+summary(regr)
+```
+
+\begin{align}
+\text{lrgdp\_us}_t=3.58831+1.27994\text{lcpi\_jp}_t
+\end{align}
+
+About a 1.28% increase in US GDP for every 1% increase in Japan CPI.
+
+(c)
+
+對$\hat e_t=\text{lrgdp\_us}_t-\hat \alpha -\hat \beta\times \text{lcpi\_jp}_t$以DF-GLS做單根檢定，落後期數以修正AIC決定。
+
+```{r}
+library(writexl)
+df <- data.frame(lcpi_jp, lrgdp_us , regr$residuals )
+colnames(df) <- c("lcpi_jp", "lrgdp_us", "e")
+write_xlsx(df, path="output.xlsx")
+```
+
+```{r}
+# we include a constant
+# very similar result to that of in Eveiws
+summary(ur.ers(df$e, type="DF-GLS", model=c("constant"), lag.max = 4))
+```
+

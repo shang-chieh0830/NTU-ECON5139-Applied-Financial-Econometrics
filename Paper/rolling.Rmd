@@ -1,0 +1,190 @@
+---
+title: "TSCV"
+output: html_document
+date: "2023-05-18"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+library(quantmod)
+library(readr)
+TE <- read.csv("Data/TE_price.csv")
+getSymbols("DEXTAUS", src="FRED", from="2000-01-01", to="2022-12-31")
+getSymbols("^TWII", src="yahoo", from="2000-01-01", to="2022-12-31")
+getSymbols("^GSPC", src="yahoo", from="2000-01-01", to="2022-12-31")
+
+# Subset the data from 2000-01-01 to 2022-12-31
+DEXTAUS <- DEXTAUS["2000-01-01/2022-12-31"]
+
+
+DEXTAUS <- na.omit(DEXTAUS)
+GSPC <- na.omit(GSPC)
+TWII <- na.omit(TWII)
+
+
+TE$Date <- as.Date(TE$Date, format = "%m/%d/%Y")
+TE <- TE[order(TE$Date),]
+TE <- TE[TE$Date>= as.Date("2012-01-01") & TE$Date<= as.Date("2022-12-31"),]
+TE <- as.xts(TE)
+
+logEX <- log(DEXTAUS)
+dlogEX <- diff(logEX, lag=1, differences=1)
+dlogEX <- na.omit(dlogEX)
+
+logGSPC <- log(GSPC)
+dlogGSPC <- diff(logGSPC, lag=1, differences=1)
+dlogGSPC <- na.omit(dlogGSPC$GSPC.Close)
+
+
+logTWII <- log(TWII)
+dlogTWII <- diff(logTWII, lag=1, differences=1)
+dlogTWII <- na.omit(dlogTWII$TWII.Close)
+
+logTE <- log(TE)
+dlogTE <- diff(logTE, lag = 1, differences = 1)
+dlogTE <- na.omit(dlogTE)
+
+date_dlogGSPC <- index(dlogGSPC)
+date_dlogTWII <- index(dlogTWII)
+date_dlogEX <- index(dlogEX)
+date_dlogTE <- index(dlogTE)
+
+common_date_TWII <- Reduce(intersect, list(date_dlogEX, date_dlogGSPC, date_dlogTWII)) |> as.Date()
+common_date_TE <- Reduce(intersect, list(date_dlogEX, date_dlogGSPC, date_dlogTE)) |> as.Date()
+
+
+dlogTWII_common <- dlogTWII[common_date_TWII]
+dlogGSPC_common_TWII <- dlogGSPC[common_date_TWII]
+x_TWII <- dlogTWII_common-dlogGSPC_common_TWII
+y_TWII <- dlogEX[common_date_TWII]
+
+dlogTE_common <- dlogTE[common_date_TE]
+dlogGSPC_common_TE <- dlogGSPC[common_date_TE]
+x_TE <- dlogTE_common-dlogGSPC_common_TE
+y_TE <- dlogEX[common_date_TE]
+
+dlogTWII_common <- data.frame(dlogTWII_common)
+dlogGSPC_common_TWII <- data.frame(dlogGSPC_common_TWII)
+x_TWII <- data.frame(x_TWII)
+y_TWII <- data.frame(y_TWII)
+
+dlogTE_common <- data.frame(dlogTE_common)
+dlogGSPC_common_TE <- data.frame(dlogGSPC_common_TE)
+x_TE <- data.frame(x_TE)
+y_TE <- data.frame(y_TE)
+
+
+TWII_df <- data.frame(y_TWII, x_TWII)
+
+
+TE_df <- data.frame(y_TE, x_TE)
+```
+
+
+
+```{r}
+library(dplyr)
+
+# Add a date column to TWII_df
+TWII_df <- TWII_df %>%
+  mutate(Date = common_date_TWII) %>% 
+  mutate(num = seq(1, nrow(TWII_df), by=1))
+
+TE_df <- TE_df %>% 
+  mutate(Date=common_date_TE) %>% 
+  mutate(num=seq(1, nrow(TE_df), by=1))
+```
+
+
+
+```{r}
+k=0
+s <- TWII_df$num>=1 +k & TWII_df$num <=5403 + k
+TWII_pred <- TWII_df[-TWII_df$num[s], ]
+TWII_pred
+
+roll_predict <- numeric(20)
+
+for (k in 0:19){
+  s <- TWII_df$num>=1 +k & TWII_df$num <=5403 + k
+  reg_data <- TWII_df[TWII_df$num[s], ]
+  roll_model <- lm(DEXTAUS ~ TWII.Close, data = reg_data)
+  roll_model
+  # one-step prediction
+  roll_forecast <- predict(roll_model, newdata = TWII_pred[TWII_pred$num==5404+k,])
+  
+
+  roll_predict[k+1] <- roll_forecast
+
+}
+
+# calculate MSE
+
+u_roll <- (TWII_pred$DEXTAUS-roll_predict)^2
+u_roll
+mse_roll <- mean(u_roll)
+mse_roll
+
+u_rw <- (TWII_pred$DEXTAUS)^2
+mean(u_rw)
+
+# DM test
+library(sandwich)
+library(lmtest)
+d_roll <- u_rw - u_roll
+d_roll_df <- data.frame(d_roll)
+N <- length(d_roll)
+m <- floor(0.75 * N^(1/3))
+reg_d_TWII <- lm(d_roll~1, data=d_roll_df)
+coeftest(reg_d_TWII, vcov=NeweyWest(reg_d_TWII, prewhite=F, adjust=F, lag=m-1))
+
+```
+
+
+```{r}
+k=0
+s <- TE_df$num>=1 +k & TE_df$num <=2561 + k
+TE_pred <- TE_df[-TE_df$num[s], ]
+TE_pred
+
+roll_predict <- numeric(20)
+
+for (k in 0:19){
+  s <- TE_df$num>=1 +k & TE_df$num <=2561 + k
+  reg_data <- TE_df[TE_df$num[s], ]
+  roll_model <- lm(DEXTAUS ~ GSPC.Close, data = reg_data)
+  roll_model
+  # one-step prediction
+  roll_forecast <- predict(roll_model, newdata = TE_pred[TE_pred$num==2562+k,])
+  
+
+  roll_predict[k+1] <- roll_forecast
+
+}
+
+# calculate MSE
+
+u_roll <- (TE_pred$DEXTAUS-roll_predict)^2
+u_roll
+mse_roll <- mean(u_roll)
+mse_roll
+
+u_rw <- (TE_pred$DEXTAUS)^2
+mean(u_rw)
+
+# DM test
+library(sandwich)
+library(lmtest)
+d_roll <- u_rw - u_roll
+d_roll_df <- data.frame(d_roll)
+N <- length(d_roll)
+m <- floor(0.75 * N^(1/3))
+reg_d_TE <- lm(d_roll~1, data=d_roll_df)
+coeftest(reg_d_TE, vcov=NeweyWest(reg_d_TE, prewhite = F, adjust = T, lag=m-1))
+```
+
