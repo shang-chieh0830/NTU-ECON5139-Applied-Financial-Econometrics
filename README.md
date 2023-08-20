@@ -1,4 +1,4 @@
-# Applied-Financial-Econometrics
+# NTU-ECON5139-Applied-Financial-Econometrics
 
 This course was taught by Professor Shiu-Sheng Chen.
 
